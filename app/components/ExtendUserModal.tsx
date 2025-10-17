@@ -38,6 +38,7 @@ export const ExtendUserModal = ({
   const [months, setMonths] = useState('1');
 
   const durationOptions = [
+    { value: '0.1', label: '3 Ngày' },
     { value: '1', label: '1 Tháng' },
     { value: '3', label: '3 Tháng' },
     { value: '6', label: '6 Tháng' },
@@ -45,7 +46,7 @@ export const ExtendUserModal = ({
   ];
 
   const handleSubmit = () => {
-    onConfirm(parseInt(months, 10));
+    onConfirm(parseInt(months, 0));
     setMonths('1');
   };
 

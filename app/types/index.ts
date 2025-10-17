@@ -5,6 +5,7 @@ export interface User {
   device_id: string;
   expired_at: string;
   is_admin: number;
+  id: string;
 }
 
 export interface AddUserData {

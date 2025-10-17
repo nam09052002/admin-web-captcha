@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { User, AddUserData } from '@/app/types';
-import { apiService } from '@/app/lib/api';
+import { apiService, DeleteUserData, UpdateUserData } from '@/app/lib/api';
 import { authService } from '@/app/lib/auth';
 
 export const useUsers = () => {
@@ -58,13 +58,12 @@ export const useUsers = () => {
         throw new Error('Session expired');
       }
 
-      // Convert durationType to months
       const monthsMap: { [key: string]: number } = {
-        '3days': 0.1, // ~3 days
-        '1month': 1,
-        '3months': 3,
-        '6months': 6,
-        '12months': 12
+        '3days': 3,
+        '1month': 31,
+        '3months': 91,
+        '6months': 181,
+        '12months': 366
       };
 
       const dataToSend = {
@@ -90,12 +89,12 @@ export const useUsers = () => {
     }
   };
 
-  const deleteUser = async (username: string) => {
+  const deleteUser = async (data: DeleteUserData) => {
     setLoading(true);
     setError('');
     
     try {
-      const response = await apiService.deleteUser(username);
+      const response = await apiService.deleteUser(data);
       
       if (response.success) {
         await loadUsers(searchTerm);
@@ -112,12 +111,12 @@ export const useUsers = () => {
     }
   };
 
-  const deleteDevice  = async (username: string) => {
+  const deleteDevice  = async (data: UpdateUserData) => {
     setLoading(true);
     setError('');
     
     try {
-      const response = await apiService.deleteUser(username);
+      const response = await apiService.updateUser(data);
       
       if (response.success) {
         await loadUsers(searchTerm);
@@ -134,12 +133,12 @@ export const useUsers = () => {
     }
   };
 
-  const extendUser = async (username: string, months: number = 1) => {
+  const extendUser = async (data: UpdateUserData) => {
     setLoading(true);
     setError('');
     
     try {
-      const response = await apiService.extendUser(username, months);
+      const response = await apiService.updateUser(data);
       
       if (response.success) {
         await loadUsers(searchTerm);

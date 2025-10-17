@@ -23,7 +23,6 @@ export default function DashboardPage() {
     extendUser
   } = useUsers();
 
-  // Hàm cập nhật activity khi user tương tác
   const updateUserActivity = () => {
     authService.updateActivity();
   };
@@ -40,7 +39,6 @@ export default function DashboardPage() {
 
     updateUserActivity();
 
-    // Theo dõi sự kiện user tương tác
     const events = ['click', 'keypress', 'scroll', 'mousemove'];
     const handleActivity = () => {
       updateUserActivity();
@@ -50,7 +48,6 @@ export default function DashboardPage() {
       document.addEventListener(event, handleActivity);
     });
 
-    // Cập nhật thời gian còn lại mỗi giây
     const updateRemainingTime = () => {
       const time = authService.getRemainingTime();
       setRemainingTime(time);
@@ -106,6 +103,7 @@ export default function DashboardPage() {
         onDeleteDevice={deleteDevice}
         onExtendUser={extendUser}
         onUserActivity={updateUserActivity}
+        onReloadData={loadUsers}
       />
     </div>
   );

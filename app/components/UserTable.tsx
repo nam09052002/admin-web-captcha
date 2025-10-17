@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Search,
   Plus,
@@ -21,10 +21,10 @@ import {
   Calendar,
   RefreshCw
 } from 'lucide-react';
-import { User } from '@/app/types';
 import { AddUserModal } from './AddUserModal';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { ExtendUserModal } from './ExtendUserModal';
+import { DeleteUserData, UpdateUserData, User } from '../lib/api';
 
 interface UserTableProps {
   users: User[];
@@ -32,10 +32,11 @@ interface UserTableProps {
   loading: boolean;
   onSearchChange: (term: string) => void;
   onAddUser: (data: any) => Promise<void>;
-  onDeleteUser: (username: string) => void;
-  onDeleteDevice: (username: string) => void;
-  onExtendUser: (username: string, months: number) => void;
+  onDeleteUser: (data: DeleteUserData) => void;
+  onDeleteDevice: (data: UpdateUserData) => void;
+  onExtendUser: (data: UpdateUserData) => void;
   onUserActivity?: () => void;
+  onReloadData?: () => void;
 }
 
 export const UserTable = ({
@@ -47,7 +48,8 @@ export const UserTable = ({
   onDeleteUser,
   onDeleteDevice,
   onExtendUser,
-  onUserActivity
+  onUserActivity,
+  onReloadData
 }: UserTableProps) => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -75,21 +77,19 @@ export const UserTable = ({
 
   const handleDeleteClick = (user: User) => {
     setSelectedUser(user);
-    setActionType('deleteUser');
     setIsDeleteModalOpen(true);
     onUserActivity?.();
   };
 
   const handleExtendClick = (user: User) => {
     setSelectedUser(user);
-    setActionType('extend');
     setIsExtendModalOpen(true);
     onUserActivity?.();
   };
 
   const handleConfirmDelete = () => {
     if (selectedUser) {
-      handleAction(() => onDeleteUser(selectedUser.username));
+      handleAction(() => onDeleteUser({ created_by: selectedUser.created_by, id: selectedUser.id }));
       setIsDeleteModalOpen(false);
       setSelectedUser(null);
     }
@@ -97,36 +97,40 @@ export const UserTable = ({
 
   const handleConfirmExtend = (months: number) => {
     if (selectedUser) {
-      handleAction(() => onExtendUser(selectedUser.username, months));
+      const monthsMap: { [key: string]: number } = {
+        '0': 0,
+        '0.1': 3,
+        '1': 31,
+        '3': 91,
+        '6': 181,
+        '12': 366
+      };
+      handleAction(() => onExtendUser({ 
+        id: selectedUser.id,
+        created_by: selectedUser.created_by,
+        device_id: selectedUser.device_id,
+        add_days: monthsMap[months.toString()] || 0
+       }));
       setIsExtendModalOpen(false);
       setSelectedUser(null);
     }
   };
 
   const kickDevice = (user: User) => {
-    handleAction(() => onDeleteDevice(user.username));
-  }
+    handleAction(() => onDeleteDevice({
+      id: user.id,
+      created_by: user.created_by,
+      device_id: null,
+      add_days: 0
+    }));
+  };
+
 
   return (
     <div className="py-6 space-y-6" onClick={onUserActivity}>
       {/* Header */}
       <Card className="bg-gradient-to-br from-background to-muted/20">
-        {/* <CardHeader>
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <CardTitle className="text-2xl">Danh Sách Người Dùng</CardTitle>
-            <Button 
-              onClick={() => {
-                setIsAddModalOpen(true);
-                onUserActivity?.();
-              }}
-              className="gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Thêm Người Dùng
-            </Button>
-          </div>
-        </CardHeader> */}
-        <CardContent className='flex flex-col sm:flex-row gap-4 sm:gap-0 sm:justify-between sm:items-center'>
+        <CardContent className="flex flex-col sm:flex-row gap-4 sm:gap-0 sm:justify-between sm:items-center">
           {/* Search Input */}
           <div className="relative w-full sm:w-96 order-2 sm:order-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
@@ -141,32 +145,47 @@ export const UserTable = ({
             />
           </div>
 
-          {/* Add Button */}
-          <Button
-            onClick={() => {
-              setIsAddModalOpen(true);
-              onUserActivity?.();
-            }}
-            className="gap-2 w-full sm:w-auto order-1 sm:order-2"
-          >
-            <Plus className="w-4 h-4" />
-            Thêm Người Dùng
-          </Button>
+          {/* Action Buttons */}
+          <div className="flex gap-2 w-full sm:w-auto order-1 sm:order-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                onReloadData?.();
+                onUserActivity?.();
+              }}
+              className="gap-2"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Tải lại
+            </Button>
+
+            <Button
+              onClick={() => {
+                setIsAddModalOpen(true);
+                onUserActivity?.();
+              }}
+              className="gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Thêm Người Dùng
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
+      {/* Table Section */}
       <Card>
         <CardContent className="p-0">
-          <div className="overflow-y-auto max-h-[600px] relative">
+          <div className="overflow-y-auto max-h-[600px]">
             <Table>
-              <TableHeader>
+              <TableHeader className="sticky top-0 bg-background z-10 shadow-sm">
                 <TableRow>
                   <TableHead className="w-[70px] text-center">STT</TableHead>
-                  <TableHead className="w-[200px] ">Tên Người Dùng</TableHead>
-                  <TableHead className="w-[180px] ">Thiết Bị</TableHead>
-                  <TableHead className="w-[150px] ">Ngày Hết Hạn</TableHead>
-                  <TableHead className="w-[160px] ">Thời Gian Còn Lại</TableHead>
-                  <TableHead className="w-[150px] ">Ngày Tạo</TableHead>
+                  <TableHead className="w-[200px]">Tên Người Dùng</TableHead>
+                  <TableHead className="w-[180px]">Thiết Bị</TableHead>
+                  <TableHead className="w-[150px]">Ngày Hết Hạn</TableHead>
+                  <TableHead className="w-[160px]">Thời Gian Còn Lại</TableHead>
+                  <TableHead className="w-[150px]">Ngày Tạo</TableHead>
                   <TableHead className="w-[300px] text-center">Hành Động</TableHead>
                 </TableRow>
               </TableHeader>
@@ -189,99 +208,95 @@ export const UserTable = ({
                     const diffDays = Math.ceil(
                       (expiry.getTime() - today.getTime()) / (1000 * 3600 * 24)
                     );
-                  return (
-                    <TableRow key={user.username} className="hover:bg-muted/50">
-                      <TableCell className="text-center font-medium">
-                        {index + 1}
-                      </TableCell>
 
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div
-                            className={`w-2 h-2 rounded-full ${
-                              diffDays <= 0 ? 'bg-red-500' : 'bg-green-500'
-                            }`}
-                          />
-                          {user.username}
-                        </div>
-                      </TableCell>
+                    return (
+                      <TableRow key={user.username} className="hover:bg-muted/50">
+                        <TableCell className="text-center font-medium">{index + 1}</TableCell>
 
-                      <TableCell>
-                        {user.device_id ? (
-                          <Badge variant="secondary" className="gap-1">
-                            <Smartphone className="w-3 h-3" />
-                            {user.device_id}
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-muted-foreground">
-                            Không có thiết bị
-                          </Badge>
-                        )}
-                      </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <div
+                              className={`w-2 h-2 rounded-full ${
+                                diffDays <= 0 ? 'bg-red-500' : 'bg-green-500'
+                              }`}
+                            />
+                            {user.username}
+                          </div>
+                        </TableCell>
 
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-muted-foreground" />
-                          <span className={diffDays <= 0 ? 'text-destructive font-medium' : ''}>
-                            {formatDate(user.expired_at)}
-                          </span>
-                        </div>
-                      </TableCell>
+                        <TableCell>
+                          {user.device_id ? (
+                            <Badge variant="secondary" className="gap-1">
+                              <Smartphone className="w-3 h-3" />
+                              {user.device_id}
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-muted-foreground">
+                              Không có thiết bị
+                            </Badge>
+                          )}
+                        </TableCell>
 
-                      <TableCell>
-                        {diffDays > 0 ? (
-                          <Badge variant="outline" className="text-green-600 border-green-400">
-                            Còn {diffDays} ngày
-                          </Badge>
-                        ) : (
-                          <Badge variant="destructive">Hết hạn</Badge>
-                        )}
-                      </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-muted-foreground" />
+                            <span className={diffDays <= 0 ? 'text-destructive font-medium' : ''}>
+                              {formatDate(user.expired_at)}
+                            </span>
+                          </div>
+                        </TableCell>
 
-                      <TableCell className="text-muted-foreground">
-                        {user.created_at ? formatDate(user.created_at) : 'N/A'}
-                      </TableCell>
+                        <TableCell>
+                          {diffDays > 0 ? (
+                            <Badge variant="outline" className="text-green-600 border-green-400">
+                              Còn {diffDays} ngày
+                            </Badge>
+                          ) : (
+                            <Badge variant="destructive">Hết hạn</Badge>
+                          )}
+                        </TableCell>
 
-                      <TableCell>
-                        <div className="flex gap-2 flex-wrap">
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => {
-                              handleAction(() => kickDevice(user));
-                            }}
-                            className="gap-1 text-blue-600 border-blue-300 hover:bg-blue-100"
-                          >
-                            <Smartphone className="w-3 h-3" />
-                            Xóa Thiết Bị
-                          </Button>
+                        <TableCell className="text-muted-foreground">
+                          {user.created_at ? formatDate(user.created_at) : 'N/A'}
+                        </TableCell>
 
-                          <Button
-                            size="sm"
-                            onClick={() => handleExtendClick(user)}
-                            className="gap-1"
-                          >
-                            <RefreshCw className="w-3 h-3" />
-                            Gia Hạn
-                          </Button>
+                        <TableCell>
+                          <div className="flex gap-2 flex-wrap">
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => handleAction(() => kickDevice(user))}
+                              className="gap-1 text-blue-600 border-blue-300 hover:bg-blue-100"
+                            >
+                              <Smartphone className="w-3 h-3" />
+                              Xóa Thiết Bị
+                            </Button>
 
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDeleteClick(user)}
-                            className="gap-1 text-destructive border-destructive/20 hover:bg-destructive/10"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                            Xóa User
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+                            <Button
+                              size="sm"
+                              onClick={() => handleExtendClick(user)}
+                              className="gap-1"
+                            >
+                              <RefreshCw className="w-3 h-3" />
+                              Gia Hạn
+                            </Button>
+
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteClick(user)}
+                              className="gap-1 text-destructive border-destructive/20 hover:bg-destructive/10"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                              Xóa User
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
               </TableBody>
             </Table>
-
 
             {users.length === 0 && !loading && (
               <div className="text-center py-12 text-muted-foreground">
