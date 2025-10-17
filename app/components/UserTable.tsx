@@ -53,7 +53,7 @@ export const UserTable = ({
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isExtendModalOpen, setIsExtendModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [actionType, setActionType] = useState<'delete' | 'extend' | null>(null);
+  const [actionType, setActionType] = useState<'deleteUser' | 'extend' | 'deleteDevice' | null>(null);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('vi-VN');
@@ -75,7 +75,7 @@ export const UserTable = ({
 
   const handleDeleteClick = (user: User) => {
     setSelectedUser(user);
-    setActionType('delete');
+    setActionType('deleteUser');
     setIsDeleteModalOpen(true);
     onUserActivity?.();
   };
@@ -102,6 +102,10 @@ export const UserTable = ({
       setSelectedUser(null);
     }
   };
+
+  const kickDevice = (user: User) => {
+    handleAction(() => onDeleteDevice(user.username));
+  }
 
   return (
     <div className="py-6 space-y-6" onClick={onUserActivity}>
@@ -151,91 +155,133 @@ export const UserTable = ({
         </CardContent>
       </Card>
 
-      {/* Table */}
       <Card>
         <CardContent className="p-0">
-          <div className="overflow-auto">
+          <div className="overflow-y-auto max-h-[600px] relative">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[200px]">Tên Người Dùng</TableHead>
-                  <TableHead className="w-[180px]">Thiết Bị</TableHead>
-                  <TableHead className="w-[150px]">Ngày Hết Hạn</TableHead>
-                  <TableHead className="w-[150px]">Ngày Tạo</TableHead>
-                  <TableHead className="w-[300px]">Hành Động</TableHead>
+                  <TableHead className="w-[70px] text-center">STT</TableHead>
+                  <TableHead className="w-[200px] ">Tên Người Dùng</TableHead>
+                  <TableHead className="w-[180px] ">Thiết Bị</TableHead>
+                  <TableHead className="w-[150px] ">Ngày Hết Hạn</TableHead>
+                  <TableHead className="w-[160px] ">Thời Gian Còn Lại</TableHead>
+                  <TableHead className="w-[150px] ">Ngày Tạo</TableHead>
+                  <TableHead className="w-[300px] text-center">Hành Động</TableHead>
                 </TableRow>
               </TableHeader>
+
               <TableBody>
-                {users.map((user) => (
-                  <TableRow key={user.username} className="hover:bg-muted/50">
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${isExpired(user.expired_at) ? 'bg-red-500' : 'bg-green-500'}`} />
-                        {user.username}
-                      </div>
-                    </TableCell>
+                {[...users]
+                  .sort((a, b) => {
+                    const today = new Date();
+                    const diffA = Math.ceil(
+                      (new Date(a.expired_at).getTime() - today.getTime()) / (1000 * 3600 * 24)
+                    );
+                    const diffB = Math.ceil(
+                      (new Date(b.expired_at).getTime() - today.getTime()) / (1000 * 3600 * 24)
+                    );
+                    return diffB - diffA;
+                  })
+                  .map((user, index) => {
+                    const today = new Date();
+                    const expiry = new Date(user.expired_at);
+                    const diffDays = Math.ceil(
+                      (expiry.getTime() - today.getTime()) / (1000 * 3600 * 24)
+                    );
+                  return (
+                    <TableRow key={user.username} className="hover:bg-muted/50">
+                      <TableCell className="text-center font-medium">
+                        {index + 1}
+                      </TableCell>
 
-                    <TableCell>
-                      {user.device_id ? (
-                        <Badge variant="secondary" className="gap-1">
-                          <Smartphone className="w-3 h-3" />
-                          {user.device_id}
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-muted-foreground">
-                          Không có thiết bị
-                        </Badge>
-                      )}
-                    </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div
+                            className={`w-2 h-2 rounded-full ${
+                              diffDays <= 0 ? 'bg-red-500' : 'bg-green-500'
+                            }`}
+                          />
+                          {user.username}
+                        </div>
+                      </TableCell>
 
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-muted-foreground" />
-                        <div className="flex flex-col">
-                          <span className={isExpired(user.expired_at) ? "text-destructive font-medium" : ""}>
+                      <TableCell>
+                        {user.device_id ? (
+                          <Badge variant="secondary" className="gap-1">
+                            <Smartphone className="w-3 h-3" />
+                            {user.device_id}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-muted-foreground">
+                            Không có thiết bị
+                          </Badge>
+                        )}
+                      </TableCell>
+
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-muted-foreground" />
+                          <span className={diffDays <= 0 ? 'text-destructive font-medium' : ''}>
                             {formatDate(user.expired_at)}
                           </span>
-                          {/* {isExpired(user.expired_at) && (
-                            <Badge variant="destructive" className="w-fit text-xs">
-                              Hết hạn
-                            </Badge>
-                          )} */}
                         </div>
-                      </div>
-                    </TableCell>
+                      </TableCell>
 
-                    <TableCell>
-                      <div className="text-muted-foreground">
+                      <TableCell>
+                        {diffDays > 0 ? (
+                          <Badge variant="outline" className="text-green-600 border-green-400">
+                            Còn {diffDays} ngày
+                          </Badge>
+                        ) : (
+                          <Badge variant="destructive">Hết hạn</Badge>
+                        )}
+                      </TableCell>
+
+                      <TableCell className="text-muted-foreground">
                         {user.created_at ? formatDate(user.created_at) : 'N/A'}
-                      </div>
-                    </TableCell>
+                      </TableCell>
 
-                    <TableCell>
-                      <div className="flex gap-2 flex-wrap">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeleteClick(user)}
-                          className="gap-1 text-destructive border-destructive/20 hover:bg-destructive/10"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                          Xóa User
-                        </Button>
+                      <TableCell>
+                        <div className="flex gap-2 flex-wrap">
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => {
+                              handleAction(() => kickDevice(user));
+                            }}
+                            className="gap-1 text-blue-600 border-blue-300 hover:bg-blue-100"
+                          >
+                            <Smartphone className="w-3 h-3" />
+                            Xóa Thiết Bị
+                          </Button>
 
-                        <Button
-                          size="sm"
-                          onClick={() => handleExtendClick(user)}
-                          className="gap-1"
-                        >
-                          <RefreshCw className="w-3 h-3" />
-                          Gia Hạn
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                          <Button
+                            size="sm"
+                            onClick={() => handleExtendClick(user)}
+                            className="gap-1"
+                          >
+                            <RefreshCw className="w-3 h-3" />
+                            Gia Hạn
+                          </Button>
+
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteClick(user)}
+                            className="gap-1 text-destructive border-destructive/20 hover:bg-destructive/10"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            Xóa User
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
+
 
             {users.length === 0 && !loading && (
               <div className="text-center py-12 text-muted-foreground">
