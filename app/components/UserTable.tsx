@@ -7,7 +7,7 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow
+  TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,7 +19,7 @@ import {
   Trash2,
   Smartphone,
   Calendar,
-  RefreshCw
+  RefreshCw,
 } from 'lucide-react';
 import { AddUserModal } from './AddUserModal';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
@@ -49,20 +49,15 @@ export const UserTable = ({
   onDeleteDevice,
   onExtendUser,
   onUserActivity,
-  onReloadData
+  onReloadData,
 }: UserTableProps) => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isExtendModalOpen, setIsExtendModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [actionType, setActionType] = useState<'deleteUser' | 'extend' | 'deleteDevice' | null>(null);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('vi-VN');
-  };
-
-  const isExpired = (expiryDate: string) => {
-    return new Date(expiryDate) < new Date();
   };
 
   const handleAction = (action: () => void) => {
@@ -78,18 +73,21 @@ export const UserTable = ({
   const handleDeleteClick = (user: User) => {
     setSelectedUser(user);
     setIsDeleteModalOpen(true);
-    onUserActivity?.();
   };
 
   const handleExtendClick = (user: User) => {
     setSelectedUser(user);
     setIsExtendModalOpen(true);
-    onUserActivity?.();
   };
 
   const handleConfirmDelete = () => {
     if (selectedUser) {
-      handleAction(() => onDeleteUser({ created_by: selectedUser.created_by, id: selectedUser.id }));
+      handleAction(() =>
+        onDeleteUser({
+          created_by: selectedUser.created_by,
+          id: selectedUser.id,
+        })
+      );
       setIsDeleteModalOpen(false);
       setSelectedUser(null);
     }
@@ -103,35 +101,37 @@ export const UserTable = ({
         '1': 31,
         '3': 91,
         '6': 181,
-        '12': 366
+        '12': 366,
       };
-      handleAction(() => onExtendUser({ 
-        id: selectedUser.id,
-        created_by: selectedUser.created_by,
-        device_id: selectedUser.device_id,
-        add_days: monthsMap[months.toString()] || 0
-       }));
+      handleAction(() =>
+        onExtendUser({
+          id: selectedUser.id,
+          created_by: selectedUser.created_by,
+          device_id: selectedUser.device_id,
+          add_days: monthsMap[months.toString()] || 0,
+        })
+      );
       setIsExtendModalOpen(false);
       setSelectedUser(null);
     }
   };
 
   const kickDevice = (user: User) => {
-    handleAction(() => onDeleteDevice({
-      id: user.id,
-      created_by: user.created_by,
-      device_id: null,
-      add_days: 0
-    }));
+    handleAction(() =>
+      onDeleteDevice({
+        id: user.id,
+        created_by: user.created_by,
+        device_id: null,
+        add_days: 0,
+      })
+    );
   };
-
 
   return (
     <div className="py-6 space-y-6" onClick={onUserActivity}>
       {/* Header */}
       <Card className="bg-gradient-to-br from-background to-muted/20">
         <CardContent className="flex flex-col sm:flex-row gap-4 sm:gap-0 sm:justify-between sm:items-center">
-          {/* Search Input */}
           <div className="relative w-full sm:w-96 order-2 sm:order-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
@@ -176,33 +176,31 @@ export const UserTable = ({
       {/* Table Section */}
       <Card>
         <CardContent className="p-0">
-          <div className="overflow-y-auto max-h-[600px]">
-            <Table>
-              <TableHeader className="sticky top-0 bg-background z-10 shadow-sm">
+          <div className="overflow-x-auto border-b">
+            <Table className="w-full table-fixed">
+              <TableHeader className="sticky top-0 z-10 bg-background shadow-sm">
                 <TableRow>
-                  <TableHead className="w-[70px] text-center">STT</TableHead>
-                  <TableHead className="w-[200px]">Tên Người Dùng</TableHead>
-                  <TableHead className="w-[180px]">Thiết Bị</TableHead>
-                  <TableHead className="w-[150px]">Ngày Hết Hạn</TableHead>
-                  <TableHead className="w-[160px]">Thời Gian Còn Lại</TableHead>
-                  <TableHead className="w-[150px]">Ngày Tạo</TableHead>
+                  <TableHead className="w-[60px] text-center">STT</TableHead>
+                  <TableHead className="w-[200px] text-left">Tên Người Dùng</TableHead>
+                  <TableHead className="w-[180px] text-left">Thiết Bị</TableHead>
+                  <TableHead className="w-[150px] text-left">Ngày Hết Hạn</TableHead>
+                  <TableHead className="w-[160px] text-left">Thời Gian Còn Lại</TableHead>
+                  <TableHead className="w-[150px] text-left">Ngày Tạo</TableHead>
                   <TableHead className="w-[300px] text-center">Hành Động</TableHead>
                 </TableRow>
               </TableHeader>
+            </Table>
+          </div>
 
+          {/* ✅ Body scroll riêng */}
+          <div
+            className="max-h-[600px] overflow-y-auto"
+            style={{ scrollbarGutter: 'stable' }}
+          >
+            <Table className="w-full table-fixed">
               <TableBody>
-                {[...users]
-                  .sort((a, b) => {
-                    const today = new Date();
-                    const diffA = Math.ceil(
-                      (new Date(a.expired_at).getTime() - today.getTime()) / (1000 * 3600 * 24)
-                    );
-                    const diffB = Math.ceil(
-                      (new Date(b.expired_at).getTime() - today.getTime()) / (1000 * 3600 * 24)
-                    );
-                    return diffB - diffA;
-                  })
-                  .map((user, index) => {
+                {users.length ? (
+                  users.map((user, index) => {
                     const today = new Date();
                     const expiry = new Date(user.expired_at);
                     const diffDays = Math.ceil(
@@ -210,10 +208,14 @@ export const UserTable = ({
                     );
 
                     return (
-                      <TableRow key={user.username} className="hover:bg-muted/50">
-                        <TableCell className="text-center font-medium">{index + 1}</TableCell>
-
-                        <TableCell>
+                      <TableRow
+                        key={user.username}
+                        className="hover:bg-muted/50 transition-colors text-center"
+                      >
+                        <TableCell className="w-[60px] font-medium">
+                          {index + 1}
+                        </TableCell>
+                        <TableCell className="w-[200px] text-left">
                           <div className="flex items-center gap-2">
                             <div
                               className={`w-2 h-2 rounded-full ${
@@ -223,45 +225,52 @@ export const UserTable = ({
                             {user.username}
                           </div>
                         </TableCell>
-
-                        <TableCell>
+                        <TableCell className="w-[180px] text-left">
                           {user.device_id ? (
                             <Badge variant="secondary" className="gap-1">
                               <Smartphone className="w-3 h-3" />
                               {user.device_id}
                             </Badge>
                           ) : (
-                            <Badge variant="outline" className="text-muted-foreground">
+                            <Badge
+                              variant="outline"
+                              className="text-muted-foreground"
+                            >
                               Không có thiết bị
                             </Badge>
                           )}
                         </TableCell>
-
-                        <TableCell>
+                        <TableCell className="w-[150px] text-left">
                           <div className="flex items-center gap-2">
                             <Calendar className="w-4 h-4 text-muted-foreground" />
-                            <span className={diffDays <= 0 ? 'text-destructive font-medium' : ''}>
+                            <span
+                              className={
+                                diffDays <= 0
+                                  ? 'text-destructive font-medium'
+                                  : ''
+                              }
+                            >
                               {formatDate(user.expired_at)}
                             </span>
                           </div>
                         </TableCell>
-
-                        <TableCell>
+                        <TableCell className="w-[160px] text-left">
                           {diffDays > 0 ? (
-                            <Badge variant="outline" className="text-green-600 border-green-400">
+                            <Badge
+                              variant="outline"
+                              className="text-green-600 border-green-400"
+                            >
                               Còn {diffDays} ngày
                             </Badge>
                           ) : (
                             <Badge variant="destructive">Hết hạn</Badge>
                           )}
                         </TableCell>
-
-                        <TableCell className="text-muted-foreground">
+                        <TableCell className="w-[150px] text-left text-muted-foreground">
                           {user.created_at ? formatDate(user.created_at) : 'N/A'}
                         </TableCell>
-
-                        <TableCell>
-                          <div className="flex gap-2 flex-wrap">
+                        <TableCell className="w-[300px] text-center">
+                          <div className="flex justify-center gap-2 flex-wrap">
                             <Button
                               variant="secondary"
                               size="sm"
@@ -294,35 +303,32 @@ export const UserTable = ({
                         </TableCell>
                       </TableRow>
                     );
-                  })}
+                  })
+                ) : (
+                  <TableRow>
+                    <TableCell
+                      colSpan={7}
+                      className="h-24 text-center text-muted-foreground"
+                    >
+                      {loading
+                        ? 'Đang tải dữ liệu...'
+                        : 'Không tìm thấy người dùng'}
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
-
-            {users.length === 0 && !loading && (
-              <div className="text-center py-12 text-muted-foreground">
-                <Search className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p className="text-lg font-medium">Không tìm thấy người dùng</p>
-                <p className="text-sm">Thử thay đổi từ khóa tìm kiếm hoặc thêm người dùng mới</p>
-              </div>
-            )}
-
-            {loading && (
-              <div className="text-center py-12">
-                <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4" />
-                <p className="text-muted-foreground">Đang tải dữ liệu...</p>
-              </div>
-            )}
           </div>
         </CardContent>
       </Card>
 
+      {/* Modals */}
       <AddUserModal
         open={isAddModalOpen}
         onOpenChange={setIsAddModalOpen}
         onAddUser={handleAddUser}
         onUserActivity={onUserActivity}
       />
-
       <DeleteConfirmModal
         open={isDeleteModalOpen}
         onOpenChange={setIsDeleteModalOpen}
@@ -330,7 +336,6 @@ export const UserTable = ({
         onConfirm={handleConfirmDelete}
         onUserActivity={onUserActivity}
       />
-
       <ExtendUserModal
         open={isExtendModalOpen}
         onOpenChange={setIsExtendModalOpen}
