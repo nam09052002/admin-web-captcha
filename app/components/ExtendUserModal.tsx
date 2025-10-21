@@ -42,7 +42,8 @@ export const ExtendUserModal = ({
     { value: '1', label: '1 Tháng' },
     { value: '3', label: '3 Tháng' },
     { value: '6', label: '6 Tháng' },
-    { value: '12', label: '12 Tháng' }
+    { value: '12', label: '12 Tháng' },
+    { value: '9999', label: 'Vĩnh viễn' }
   ];
 
   const handleSubmit = () => {

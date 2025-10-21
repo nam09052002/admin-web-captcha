@@ -39,7 +39,8 @@ export const AddUserModal = ({ open, onOpenChange, onAddUser, onUserActivity }: 
     { value: '1month', label: '1 Tháng' },
     { value: '3months', label: '3 Tháng' },
     { value: '6months', label: '6 Tháng' },
-    { value: '12months', label: '12 Tháng' }
+    { value: '12months', label: '12 Tháng' },
+    { value: '9999months', label: 'Vĩnh viễn' }
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {

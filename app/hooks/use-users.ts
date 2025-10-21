@@ -63,8 +63,10 @@ export const useUsers = () => {
         '1month': 31,
         '3months': 91,
         '6months': 181,
-        '12months': 366
+        '12months': 366,
+        '9999months': 300000,
       };
+      console.log('Mapped months:', monthsMap[userData.durationType]);
 
       const dataToSend = {
         username: userData.username,

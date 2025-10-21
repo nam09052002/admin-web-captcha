@@ -102,6 +102,7 @@ export const UserTable = ({
         '3': 91,
         '6': 181,
         '12': 366,
+        '9999': 300000,
       };
       handleAction(() =>
         onExtendUser({
@@ -200,7 +201,17 @@ export const UserTable = ({
             <Table className="w-full table-fixed">
               <TableBody>
                 {users.length ? (
-                  users.map((user, index) => {
+                  users.sort((a, b) => {
+                    const today = new Date();
+                    const diffA = Math.ceil(
+                      (new Date(a.expired_at).getTime() - today.getTime()) / (1000 * 3600 * 24)
+                    );
+                    const diffB = Math.ceil(
+                      (new Date(b.expired_at).getTime() - today.getTime()) / (1000 * 3600 * 24)
+                    );
+                    return diffB - diffA;
+                  })
+                  .map((user, index) => {
                     const today = new Date();
                     const expiry = new Date(user.expired_at);
                     const diffDays = Math.ceil(
