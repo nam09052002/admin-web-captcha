@@ -27,7 +27,6 @@ import { ExtendUserModal } from './ExtendUserModal';
 import { apiService, DeleteUserData, historyCaptchaModel, UpdateUserData, User } from '../lib/api';
 import { authService } from '../lib/auth';
 
-
 interface UserTableProps {
   activeTab: 'users' | 'captcha';
   users: User[];
@@ -61,6 +60,8 @@ export const UserTable = ({
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [captchaHistory, setCaptchaHistory] = useState<historyCaptchaModel[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+
+  const [searchCaptcha, setSearchCaptcha] = useState('');
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('vi-VN');
@@ -179,6 +180,9 @@ export const UserTable = ({
     fetchHistory();
   }, [activeTab]);
 
+  const filteredCaptchaHistory = captchaHistory.filter((item) =>
+    (item.username || '').toLowerCase().includes(searchCaptcha.toLowerCase())
+  );
 
   if (activeTab === 'users') {
     return (
@@ -398,92 +402,96 @@ export const UserTable = ({
 
   return (
     <div className="py-6 space-y-6" onClick={onUserActivity}>
+      <Card className="bg-gradient-to-br from-background to-muted/20">
+        <CardContent className="flex flex-col sm:flex-row gap-4 sm:gap-0 sm:justify-between sm:items-center">
+          <div className="relative w-full sm:w-96">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+            <Input
+              placeholder="Tìm kiếm theo người dùng..."
+              value={searchCaptcha}
+              onChange={(e) => setSearchCaptcha(e.target.value)}
+              className="pl-10 w-full"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardContent className="p-0">
           <div className="overflow-x-auto border-b">
-            <Table className="w-full">
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[60px] text-center">STT</TableHead>
-                  <TableHead className="w-[120px]">Ảnh</TableHead>
-                  <TableHead className="w-[160px]">Người dùng</TableHead>
-                  <TableHead className="w-[280px]">Thiết bị</TableHead>
-                  <TableHead className="w-[120px]">Trạng thái</TableHead>
-                  <TableHead className="w-[280px]">Nội dung</TableHead>
-                  <TableHead className="w-[120px] text-center">Kết quả</TableHead>
-                  <TableHead className="w-[200px] text-center">Thời gian</TableHead>
-                </TableRow>
-              </TableHeader>
-
-              <TableBody>
-                {loadingHistory ? (
+            <div className="max-h-[600px] overflow-y-auto" style={{ scrollbarGutter: "stable" }}>
+              <Table className="w-full table-fixed">
+                <TableHeader className="sticky top-0 bg-background z-10 shadow-sm">
                   <TableRow>
-                    <TableCell
-                      colSpan={8}
-                      className="text-center h-24 text-muted-foreground"
-                    >
-                      Đang tải lịch sử...
-                    </TableCell>
+                    <TableHead className="w-[60px] text-center">STT</TableHead>
+                    <TableHead className="w-[120px]">Ảnh</TableHead>
+                    <TableHead className="w-[160px]">Người dùng</TableHead>
+                    <TableHead className="w-[280px]">Thiết bị</TableHead>
+                    <TableHead className="w-[120px]">Trạng thái</TableHead>
+                    <TableHead className="w-[280px]">Nội dung</TableHead>
+                    <TableHead className="w-[120px] text-center">Kết quả</TableHead>
+                    <TableHead className="w-[200px] text-center">Thời gian</TableHead>
                   </TableRow>
-                ) : captchaHistory.length > 0 ? (
-                  captchaHistory.map((item, index) => (
-                    <TableRow key={index}>
-                      {/* STT */}
-                      <TableCell className="text-center">{index + 1}</TableCell>
+                </TableHeader>
 
-                      {/* Ảnh Captcha */}
-                      <TableCell className="text-center">
-                        {item.image_url ? (
-                          <img
-                            src={item.image_url}
-                            alt="Captcha"
-                            className="object-cover rounded-md border"
-                            style={{ width: "180px", height: "100px" }}
-                          />
-                        ) : (
-                          <span className="text-muted-foreground">Không có</span>
-                        )}
-                      </TableCell>
-
-                      <TableCell>{item.username}</TableCell>
-
-                      <TableCell className="truncate max-w-[200px]" title={item.device_id}>
-                        {item.device_id || <span className="text-muted-foreground">-</span>}
-                      </TableCell>
-
-                      <TableCell className="w-[120px]">
-                        {item.success === 1 ? (
-                          <span className="text-green-600 font-semibold">Thành công</span>
-                        ) : (
-                          <span className="text-red-500 font-semibold">Thất bại</span>
-                        )}
-                      </TableCell>
-
-                      <TableCell>
-                        {item.message || <span className="text-muted-foreground">Không có nội dung</span>}
-                      </TableCell>
-
-                      <TableCell className="text-center">
-                        {item.result ?? <span className="text-muted-foreground">-</span>}
-                      </TableCell>
-
-                      <TableCell className="text-center">
-                        {item.created_at}
+                <TableBody>
+                  {loadingHistory ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center h-24 text-muted-foreground">
+                        Đang tải lịch sử...
                       </TableCell>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={8}
-                      className="text-center text-muted-foreground h-24"
-                    >
-                      Không có dữ liệu
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                  ) : filteredCaptchaHistory.length > 0 ? (
+                    filteredCaptchaHistory.map((item, index) => (
+                      <TableRow key={index}>
+                        <TableCell className="text-center">{index + 1}</TableCell>
+                        <TableCell className="text-center">
+                          {item.image_url ? (
+                            <img
+                              src={item.image_url}
+                              alt="Captcha"
+                              className="object-cover rounded-md border"
+                              style={{ width: "180px", height: "100px" }}
+                            />
+                          ) : (
+                            <span className="text-muted-foreground">Không có</span>
+                          )}
+                        </TableCell>
+                        <TableCell>{item.username}</TableCell>
+                        <TableCell className="truncate max-w-[200px]" title={item.device_id}>
+                          {item.device_id || <span className="text-muted-foreground">-</span>}
+                        </TableCell>
+                        <TableCell className="w-[120px]">
+                          {item.success === 1 ? (
+                            <span className="text-green-600 font-semibold">Thành công</span>
+                          ) : (
+                            <span className="text-red-500 font-semibold">Thất bại</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {item.message || (
+                            <span className="text-muted-foreground">Không có nội dung</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {item.result ?? <span className="text-muted-foreground">-</span>}
+                        </TableCell>
+                        <TableCell className="text-center">{item.created_at}</TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={8}
+                        className="text-center text-muted-foreground h-24"
+                      >
+                        Không có dữ liệu
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         </CardContent>
       </Card>
