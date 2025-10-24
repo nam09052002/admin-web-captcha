@@ -24,6 +24,24 @@ export interface UsersResponse {
   users: User[];
 }
 
+export interface historyCaptchaModel {
+  created_at: string;
+  device_id: string;
+  id: string;
+  image_path: string;
+  image_url: string;
+  message: string;
+  result: string;
+  success: number;
+  username: string;
+}
+
+export interface HistoryCaptchaResponse {
+  success: boolean;
+  count: number;
+  historyCaptcha: historyCaptchaModel[];
+}
+
 export interface AddUserData {
   username: string;
   months: number;
@@ -173,6 +191,29 @@ class ApiService {
       return resData;
     } catch (error) {
       alert('Lỗi khi cập nhật người dùng!');
+      throw error;
+    }
+  }
+
+  async getHistoryCaptcha(username: string): Promise<HistoryCaptchaResponse> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/get_history_captcha`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username }),
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        alert(`${'Không thể lấy danh sách lịch sử giải captcha!'}`);
+      }
+
+      return data;
+    } catch (error) {
+      alert('Lỗi khi lấy danh sách lịch sử giải captcha!');
       throw error;
     }
   }

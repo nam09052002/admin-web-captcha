@@ -11,6 +11,8 @@ import { apiService } from '@/app/lib/api';
 export default function DashboardPage() {
   const router = useRouter();
   const [remainingTime, setRemainingTime] = useState<number>(0);
+  const [activeTab, setActiveTab] = useState<'users' | 'captcha'>('users');
+
   const {
     users,
     searchTerm,
@@ -92,8 +94,14 @@ export default function DashboardPage() {
       className="min-h-screen bg-slate-50 flex flex-col" 
       onClick={updateUserActivity}
     >
-      <Header onLogout={handleLogout} remainingTime={remainingTime} />
+      <Header
+        onLogout={handleLogout}
+        remainingTime={remainingTime}
+        onChangeTab={(tab) => setActiveTab(tab as 'users' | 'captcha')}
+      />
+
       <UserTable
+        activeTab={activeTab}
         users={users}
         searchTerm={searchTerm}
         loading={loading}
